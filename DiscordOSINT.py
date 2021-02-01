@@ -2,6 +2,7 @@ import requests
 import base64
 import json
 
+from requests.exceptions import HTTPError
 
 class DiscordOSINT:
     def __init__(self, email, password):
@@ -19,9 +20,16 @@ class DiscordOSINT:
 
     def __get_fingerprint(self):
         # https://discord.com/api/v8/experiments give the X-Fingerprint if it doesn't exist in the headers of the request
-        r = requests.get(f"{self.base_url}/experiments", headers={'User-Agent': self.user_agent})
-        self.fingerprint = r.json().get('fingerprint')
-        return self.fingerprint
+        try:
+            res = requests.get(f"{self.base_url}/experiments", headers={'User-Agent': self.user_agent})
+            res.raise_for_status()
+        except HTTPError as e:
+            print(f'An HTTP error occurred: {e}')
+        except Exception as err:
+            print(f'An error occurred: {e}')
+        else:
+            self.fingerprint = res.json().get('fingerprint')
+            return self.fingerprint
 
     
     def __get_super_properties(self):
@@ -62,17 +70,29 @@ class DiscordOSINT:
                    "X-Fingerprint": self.fingerprint,
                    "X-Super-Properties": self.super_properties}
 
-        r = requests.post(f"{self.base_url}/auth/login", headers=headers, json=payload)
-        self.token = r.json().get("token")
-        return self.token
+        try:
+            res = requests.post(f"{self.base_url}/auth/login", headers=headers, json=payload)
+            res.raise_for_status()
+        except HTTPError as e:
+            print(f'An HTTP error occurred: {e}')
+        except Exception as err:
+            print(f'An error occurred: {e}')
+        else:
+            self.token = res.json().get("token")
+            return self.token
 
     
     def get_friends(self):
         headers = {"User-Agent": self.user_agent, "Authorization": self.token, "X-Super-Properties": self.super_properties}
-        res = requests.get(f"{self.base_url}/users/@me/relationships", headers=headers)
-        
-        if res.status_code == 200:
+
+        try:
+            res = requests.get(f"{self.base_url}/users/@me/relationships", headers=headers)
+            res.raise_for_status()
+        except HTTPError as e:
+            print(f'An HTTP error occurred: {e}')
+        except Exception as err:
+            print(f'An error occurred: {e}')
+        else:
             self.friends = json.loads(res.text)
             return self.friends
 
-        
