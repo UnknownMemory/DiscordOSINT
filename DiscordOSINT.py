@@ -14,6 +14,7 @@ class DiscordOSINT:
         self.token = None
 
         self.friends = None
+        self.guilds = None
 
         self.__get_token(email, password)
 
@@ -95,4 +96,19 @@ class DiscordOSINT:
         else:
             self.friends = json.loads(res.text)
             return self.friends
+            
+
+    def get_guilds(self):
+        headers = {"User-Agent": self.user_agent, "Authorization": self.token, "X-Super-Properties": self.super_properties}
+
+        try:
+            res = requests.get(f"{self.base_url}/users/@me/guilds", headers=headers)
+            res.raise_for_status()
+        except HTTPError as e:
+            print(f'An HTTP error occurred: {e}')
+        except Exception as err:
+            print(f'An error occurred: {e}')
+        else:
+            self.guilds = json.loads(res.text)
+            return self.guilds
 
