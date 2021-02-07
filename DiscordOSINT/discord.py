@@ -1,10 +1,12 @@
 import requests
-import base64
 import json
+import base64
 
 from requests.exceptions import HTTPError
+from .req import req_json
 
-class DiscordOSINT:
+
+class Discord:
     def __init__(self, email, password):
         self.base_url = "https://discord.com/api/v8"
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0"
@@ -21,16 +23,13 @@ class DiscordOSINT:
 
     def __get_fingerprint(self):
         # https://discord.com/api/v8/experiments give the X-Fingerprint if it doesn't exist in the headers of the request
-        try:
-            res = requests.get(f"{self.base_url}/experiments", headers={'User-Agent': self.user_agent})
-            res.raise_for_status()
-        except HTTPError as e:
-            print(f'An HTTP error occurred: {e}')
-        except Exception as err:
-            print(f'An error occurred: {e}')
-        else:
-            self.fingerprint = res.json().get('fingerprint')
-            return self.fingerprint
+        url = f"{self.base_url}/experiments"
+        headers = {'User-Agent': self.user_agent}
+
+        res = req_json(url, headers)
+        self.fingerprint = res.get('fingerprint')
+        
+        return self.fingerprint
 
     
     def __get_super_properties(self):
@@ -84,31 +83,17 @@ class DiscordOSINT:
 
     
     def get_friends(self):
+        url = f"{self.base_url}/users/@me/relationships"
         headers = {"User-Agent": self.user_agent, "Authorization": self.token, "X-Super-Properties": self.super_properties}
 
-        try:
-            res = requests.get(f"{self.base_url}/users/@me/relationships", headers=headers)
-            res.raise_for_status()
-        except HTTPError as e:
-            print(f'An HTTP error occurred: {e}')
-        except Exception as err:
-            print(f'An error occurred: {e}')
-        else:
-            self.friends = json.loads(res.text)
-            return self.friends
+        self.friends = req_json(url, headers)
+        return self.friends
             
 
     def get_guilds(self):
+        url = f"{self.base_url}/users/@me/guilds"
         headers = {"User-Agent": self.user_agent, "Authorization": self.token, "X-Super-Properties": self.super_properties}
 
-        try:
-            res = requests.get(f"{self.base_url}/users/@me/guilds", headers=headers)
-            res.raise_for_status()
-        except HTTPError as e:
-            print(f'An HTTP error occurred: {e}')
-        except Exception as err:
-            print(f'An error occurred: {e}')
-        else:
-            self.guilds = json.loads(res.text)
-            return self.guilds
+        self.guilds = req_json(url, headers)
+        return self.guilds
 
